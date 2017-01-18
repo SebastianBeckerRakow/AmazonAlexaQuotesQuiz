@@ -15,59 +15,7 @@ var Alexa = require("alexa-sdk");
  * When editing your quotes pay attention to your punctuation. Make sure you use question marks or periods.
  * Make sure the first answer is the correct one. Set at least ANSWER_COUNT answers, any extras will be shuffled in.
  */
-var languageString = {
-    "en-GB": {
-        "translation": {
-            "GAME_NAME" : "British Reindeer Trivia", // Be sure to change this for your skill.
-            "HELP_MESSAGE": "I will ask you %s multiple choice questions. Respond with the number of the answer. " +
-            "For example, say one, two, three, or four. To start a new game at any time, say, start game. ",
-            "REPEAT_QUESTION_MESSAGE": "To repeat the last question, say, repeat. ",
-            "ASK_MESSAGE_START": "Would you like to start playing?",
-            "HELP_REPROMPT": "To give an answer to a question, respond with the number of the answer. ",
-            "STOP_MESSAGE": "Would you like to keep playing?",
-            "CANCEL_MESSAGE": "Ok, let\'s play again soon.",
-            "NO_MESSAGE": "Ok, we\'ll play another time. Goodbye!",
-            "TRIVIA_UNHANDLED": "Try saying a number between 1 and %s",
-            "HELP_UNHANDLED": "Say yes to continue, or no to end the game.",
-            "START_UNHANDLED": "Say start to start a new game.",
-            "NEW_GAME_MESSAGE": "Welcome to %s. ",
-            "WELCOME_MESSAGE": "I will ask you %s questions, try to get as many right as you can. " +
-            "Just say the number of the answer. Let\'s begin. ",
-            "ANSWER_CORRECT_MESSAGE": "correct. ",
-            "ANSWER_WRONG_MESSAGE": "wrong. ",
-            "CORRECT_ANSWER_MESSAGE": "The correct answer is %s: %s. ",
-            "ANSWER_IS_MESSAGE": "That answer is ",
-            "TELL_QUESTION_MESSAGE": "Question %s. %s ",
-            "GAME_OVER_MESSAGE": "You got %s out of %s questions correct. Thank you for playing!",
-            "SCORE_IS_MESSAGE": "Your score is %s. "
-        }
-    },
-    "en-US": {
-        "translation": {
-            "GAME_NAME" : "American Reindeer Trivia", // Be sure to change this for your skill.
-            "HELP_MESSAGE": "I will ask you %s multiple choice questions. Respond with the number of the answer. " +
-            "For example, say one, two, three, or four. To start a new game at any time, say, start game. ",
-            "REPEAT_QUESTION_MESSAGE": "To repeat the last question, say, repeat. ",
-            "ASK_MESSAGE_START": "Would you like to start playing?",
-            "HELP_REPROMPT": "To give an answer to a question, respond with the number of the answer. ",
-            "STOP_MESSAGE": "Would you like to keep playing?",
-            "CANCEL_MESSAGE": "Ok, let\'s play again soon.",
-            "NO_MESSAGE": "Ok, we\'ll play another time. Goodbye!",
-            "TRIVIA_UNHANDLED": "Try saying a number between 1 and %s",
-            "HELP_UNHANDLED": "Say yes to continue, or no to end the game.",
-            "START_UNHANDLED": "Say start to start a new game.",
-            "NEW_GAME_MESSAGE": "Welcome to %s. ",
-            "WELCOME_MESSAGE": "I will ask you %s questions, try to get as many right as you can. " +
-            "Just say the number of the answer. Let\'s begin. ",
-            "ANSWER_CORRECT_MESSAGE": "correct. ",
-            "ANSWER_WRONG_MESSAGE": "wrong. ",
-            "CORRECT_ANSWER_MESSAGE": "The correct answer is %s: %s. ",
-            "ANSWER_IS_MESSAGE": "That answer is ",
-            "TELL_QUESTION_MESSAGE": "Question %s. %s ",
-            "GAME_OVER_MESSAGE": "You got %s out of %s questions correct. Thank you for playing!",
-            "SCORE_IS_MESSAGE": "Your score is %s. "
-        }
-    },
+var languageString = {    
     "de-DE": {
         "translation": {
             "GAME_NAME" : "Fußballer Zitate das Quiz", // Be sure to change this for your skill.
@@ -98,7 +46,7 @@ var languageString = {
 };
 
 
-
+//main entry point, where all handlers are registered
 exports.handler = function(event, context, callback) {
     var alexa = Alexa.handler(event, context);
     alexa.appId = APP_ID;
@@ -108,6 +56,7 @@ exports.handler = function(event, context, callback) {
     alexa.execute();
 };
 
+// basic session handlers
 var newSessionHandlers = {
     "LaunchRequest": function () {
         this.handler.state = GAME_STATES.START;
@@ -127,14 +76,14 @@ var newSessionHandlers = {
     }
 };
 
+//start handler, what should happen if the skill gets started
 var startStateHandlers = Alexa.CreateStateHandler(GAME_STATES.START, {
     "StartGame": function (newGame) {
         var speechOutput = newGame ? this.t("NEW_GAME_MESSAGE", this.t("GAME_NAME")) + this.t("WELCOME_MESSAGE", GAME_LENGTH.toString()) : "";
-        // Select GAME_LENGTH questions for the game
+        // Generate a random index for the correct answer
         var gameQuestions = populateGameQuestions();
-        // Generate a random index for the correct answer, from 0 to 3
-        var correctAnswerIndex = Math.floor(Math.random() * (ANSWER_COUNT));
         // Select and shuffle the answers for each question
+        var correctAnswerIndex = Math.floor(Math.random() * (ANSWER_COUNT));        
         var roundAnswers = populateRoundAnswers(gameQuestions, 0, correctAnswerIndex);
         var currentQuestionIndex = 0;
         var spokenQuestion = Object.keys(questions[gameQuestions[currentQuestionIndex]])[0];
@@ -199,6 +148,7 @@ var triviaStateHandlers = Alexa.CreateStateHandler(GAME_STATES.TRIVIA, {
     }
 });
 
+//handlers for user help
 var helpStateHandlers = Alexa.CreateStateHandler(GAME_STATES.HELP, {
     "helpTheUser": function (newGame) {
         var askMessage = newGame ? this.t("ASK_MESSAGE_START") : this.t("REPEAT_QUESTION_MESSAGE") + this.t("STOP_MESSAGE");
@@ -248,6 +198,7 @@ var helpStateHandlers = Alexa.CreateStateHandler(GAME_STATES.HELP, {
     }
 });
 
+// handlers for answers
 function handleUserGuess(userGaveUp) {
     var answerSlotValid = isAnswerSlotValid(this.event.request.intent);
     var speechOutput = "";
@@ -306,6 +257,7 @@ function handleUserGuess(userGaveUp) {
     }
 }
 
+//get questions for a new game
 function populateGameQuestions() {
     var gameQuestions = [];
     var indexList = [];
@@ -333,11 +285,7 @@ function populateGameQuestions() {
     return gameQuestions;
 }
 
-/**
- * Get the answers for a given question, and place the correct answer at the spot marked by the
- * correctAnswerTargetLocation variable. Note that you can have as many answers as you want but
- * only ANSWER_COUNT will be selected.
- * */
+//get the answers for the question and randomize them, because in the original set the first listing is the right answer to the question
 function populateRoundAnswers(gameQuestionIndexes, correctAnswerIndex, correctAnswerTargetLocation) {
     var answers = [];
     var answersCopy = questions[gameQuestionIndexes[correctAnswerIndex]][Object.keys(questions[gameQuestionIndexes[correctAnswerIndex]])[0]].slice();
