@@ -1,0 +1,3 @@
+Alexa, starte Fuﬂballer Sprechblase Quiz.
+Alexa, frage Fuﬂballer Sprechblase Quiz nach einem neuen Spiel.
+Alexa, starte Fuﬂballer Sprechblase Quiz mit einem neuen Spiel.
